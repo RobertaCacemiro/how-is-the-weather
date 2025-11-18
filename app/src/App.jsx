@@ -11,61 +11,74 @@ import "./App.css";
 
 function App() {
   const [today, setToday] = useState([]);
+  const [prevision, setPrevision] = useState([]);
   const [hours, setHours] = useState([]);
 
   // const [paramSearch, setparamSearch] = useState(null);
 
   const handleSuccess = useCallback((coordinates) => {
-    // setparamSearch(coordinates);
-    fSearchWeather(coordinates);
+    console.log("Deu certo a chamada de geolocalização");
+    fSearchWeather(`lat=${coordinates.latitude}&lon=${coordinates.longitude}`);
     // Aqui você faria sua "ação" principal com as coordenadas
   }, []);
 
   useGeolocation(handleSuccess);
 
-  // console.log("PARAMETROS DE BUSCA", paramSearch);
-
   async function fSearchWeather(paramSearch) {
-    console.log("Função de busca", paramSearch.latitude);
-    console.log("Função de busca", paramSearch.longitude);
-
-    console.log(`Coordenadas salvas: Lat ${paramSearch}`);
-
     // Busca pela localização atual
-    if (paramSearch.latitude && paramSearch.longitude) {
-      try {
-        const responseToday = await axios.get(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${
-            paramSearch.latitude
-          }&lon=${paramSearch.longitude}&units=metric&appid=${
+    // if (paramSearch.latitude && paraamSearch.longitude) {
+    try {
+      const responseToday = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather?${paramSearch}&units=metric&appid=${
+          import.meta.env.VITE_API_KEY
+        }&lang=pt_br`
+      );
+
+      // setToday(responseToday.data);
+
+      // console.log("Resposta de hoje", responseToday.data);
+
+      if (responseToday.data) {
+        const responsePrevision = await axios.get(
+          `https://api.openweathermap.org/data/2.5/forecast?${paramSearch}&units=metric&appid=${
             import.meta.env.VITE_API_KEY
           }&lang=pt_br`
         );
 
-        const responseForecast = await axios.get(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${
-            paramSearch.latitude
-          }&lon=${paramSearch.longitude}&units=metric&appid=${
-            import.meta.env.VITE_API_KEY
-          }&lang=pt_br`
-        );
+        const grouped = fGroupByDate(responsePrevision.data.list);
 
-        const grouped = fGroupByDate(responseForecast.data.list);
+        const today = {
+          dt: responseToday.data.dt,
+          main: responseToday.data.main,
+          weather: responseToday.data.weather,
+          wind: responseToday.data.wind,
+          clouds: responseToday.data.clouds,
+          visibility: responseToday.data.visibility,
+          dt_txt: new Date(responseToday.data.dt * 1000)
+            .toISOString()
+            .slice(0, 10),
+          dt_current: true,
+        };
 
-        console.log("AGRUPADO", grouped);
+        const currentDate = today.dt_txt.split(" ")[0]; // YYYY-MM-DD
 
-        setToday(responseToday.data);
-        console.log("TODAY", today);
-      } catch (error) {
-        console.error(error);
+        if (!grouped[currentDate]) grouped[currentDate] = [];
+
+        // adiciona o clima atual ANTES da lista do forecast
+        grouped[currentDate].unshift(today);
+
+        setPrevision(grouped);
       }
+    } catch (error) {
+      console.error(error);
     }
+    // }
   }
 
   return (
     <div>
       <h1 className="text-4xl font-bold">How is the Weather?</h1>
-      <ViewWeather data={today} />
+      <ViewWeather prevision={prevision} />
     </div>
   );
 }

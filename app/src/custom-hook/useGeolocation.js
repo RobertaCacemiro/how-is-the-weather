@@ -10,6 +10,7 @@ export const useGeolocation = (onSuccess) => {
       return;
     }
 
+    console.log("Busca da geolocalização");
     // Função de sucesso: chama onSuccess apenas se a posição for obtida
     const sucesso = (position) => {
       console.log("Permissão concedida e posição obtida.");
