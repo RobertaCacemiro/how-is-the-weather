@@ -2,7 +2,6 @@ import { useEffect } from "react";
 
 // O hook gerencia a lógica de permissão e o estado
 export const useGeolocation = (onSuccess) => {
-  console.log("busca");
   useEffect(() => {
     // 1. Verifica suporte
     if (!navigator.geolocation) {
